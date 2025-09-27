@@ -1,13 +1,29 @@
 from django.db import models
+from django.utils import timezone
 from .patient import Patient
 from .doctor import Doctor
 from .nurse import Nurse
-from django.utils import timezone
 
 class VitalSign(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='vitals')
-    recorded_by_doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, blank=True)
-    recorded_by_nurse = models.ForeignKey(Nurse, on_delete=models.SET_NULL, null=True, blank=True)
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='vital_signs'
+    )
+    recorded_by_doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='vital_signs_recorded_doctor'
+    )
+    recorded_by_nurse = models.ForeignKey(
+        Nurse,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='vital_signs_recorded_nurse'
+    )
     date = models.DateTimeField(default=timezone.now)
 
     # Vital measurements
@@ -18,8 +34,14 @@ class VitalSign(models.Model):
     weight = models.FloatField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
-    # Status for workflow
-    reviewed_by_doctor = models.BooleanField(default=False)  # doctor marks after review
+    # Workflow & status
+    reviewed_by_doctor = models.BooleanField(default=False)  # Doctor review status
+    reviewed_at = models.DateTimeField(blank=True, null=True)  # Timestamp when reviewed
+    nurse_submitted = models.BooleanField(default=False)  # Did nurse submit
+    doctor_submitted = models.BooleanField(default=False)  # Did doctor submit
+
+    class Meta:
+        ordering = ['-date']
 
     def __str__(self):
-        return f"Vitals for {self.patient} on {self.date}"
+        return f"Vitals for {self.patient} on {self.date.strftime('%Y-%m-%d %H:%M')}"
